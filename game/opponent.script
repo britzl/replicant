@@ -1,0 +1,11 @@
+local COLLISION_RESPONSE = hash("collision_response")
+local PLAYERBULLET = hash("playerbullet")
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == COLLISION_RESPONSE then
+		if message.group == PLAYERBULLET then
+			msg.post("game", "create_impact")
+		end
+	end
+end

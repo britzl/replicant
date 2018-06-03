@@ -1,0 +1,41 @@
+[project]
+title = StudioPlay
+version = 0.1
+dependencies = https://github.com/britzl/defold-input/archive/1.3.0.zip
+custom_resources = 
+
+[bootstrap]
+main_collection = /game/game.collectionc
+
+[input]
+game_binding = /input/game.input_bindingc
+
+[display]
+width = 1136
+height = 640
+
+[physics]
+scale = 0.02
+debug = 0
+
+[script]
+shared_state = 1
+
+[library]
+include_dirs = 
+
+[android]
+package = com.britzl.defold.studioplay
+
+[osx]
+bundle_identifier = com.britzl.defold.studioplay
+
+[ios]
+bundle_identifier = com.britzl.defold.studioplay
+
+[collection]
+max_instances = 5000
+
+[sprite]
+max_count = 5000
+

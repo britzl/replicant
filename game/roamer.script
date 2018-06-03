@@ -1,0 +1,18 @@
+local util = require "game.util"
+
+function init(self)
+	msg.post("#", "move")
+	go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, 360, go.EASING_INOUTQUAD, 10)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("move") then
+		local pos = go.get_position()
+		local new = util.random_pos()
+		local distance = vmath.length(pos - new)
+		local duration = distance / 100
+		go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD, new, go.EASING_INOUTQUAD, duration, 0, function()
+			msg.post("#", "move")
+		end)
+	end
+end

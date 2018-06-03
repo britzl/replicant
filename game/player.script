@@ -1,0 +1,110 @@
+local instate = require "in.state"
+local util = require "game.util"
+
+-- actions
+local TURNLEFT = hash("turnleft")
+local TURNRIGHT = hash("turnright")
+local FORWARD = hash("forward")
+local SHIELD = hash("shield")
+local FIRE = hash("fire")
+
+-- messags
+local CONTACT_POINT_RESPONSE = hash("contact_point_response")
+local COLLISION_RESPONSE = hash("collision_response")
+
+-- collision groups
+local WALL = hash("wall")
+local OPPONENTBULLET = hash("opponentbullet")
+
+-- basis of rotation
+local V3_RIGHT = vmath.vector3(1, 0, 0)
+
+local BULLET_INTERVAL = 0.3
+local ACCELERATION = 550
+local MAX_SPEED = 300
+
+
+
+local function clamp(v, min, max)
+	return math.max(math.min(v, max), min)
+end
+
+
+local function create_bullet()
+	local pos = go.get_position()
+	local rot = go.get_rotation()
+	local dir = vmath.rotate(rot, V3_RIGHT)
+	local id = factory.create("#bulletfactory", pos, rot)
+	go.animate(id, "position", go.PLAYBACK_ONCE_FORWARD, pos + dir * 1000, go.EASING_LINEAR, 1.5, 0, function()
+		go.delete(id)
+		msg.post("game#replicant", "unregister_gameobject", { id = id })
+	end)
+	msg.post("game#replicant", "register_gameobject", { type = "bullet", id = id })
+end
+
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.speed = 0
+	self.last_bullet_fired = 0
+	go.set_position(util.random_pos())
+end
+
+
+function update(self, dt)
+	-- rotate left/right if either key is pressed
+	if instate.is_pressed(TURNLEFT) then
+		go.set_rotation(go.get_rotation() * vmath.quat_rotation_z(math.rad(250 * dt)))
+	elseif instate.is_pressed(TURNRIGHT) then
+		go.set_rotation(go.get_rotation() * vmath.quat_rotation_z(math.rad(-250 * dt)))
+	end
+
+	-- accelerate
+	if instate.is_pressed(FORWARD) then
+		self.speed = self.speed + ACCELERATION * dt
+	-- deccelerate
+	else
+		self.speed = self.speed - (self.speed * dt)
+	end
+	-- limit speed
+	self.speed = clamp(self.speed, 0, MAX_SPEED)
+
+	-- move in direction of rotation
+	go.set_position(go.get_position() + vmath.rotate(go.get_rotation(), V3_RIGHT) * self.speed *dt)
+	
+	-- fire bullets
+	if instate.is_pressed(FIRE) then
+		-- respect bullet interval
+		local now = socket.gettime()
+		if now > self.last_bullet_fired + BULLET_INTERVAL then
+			self.last_bullet_fired = now
+			create_bullet()
+		end
+	end
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == CONTACT_POINT_RESPONSE then
+		if message.group == WALL then
+			go.set_position(go.get_position() + message.normal * message.distance)
+		end
+	elseif message_id == COLLISION_RESPONSE then
+		if message.group == OPPONENTBULLET then
+			print("hit")
+			msg.post("game", "create_impact")
+		end
+	end
+end
+
+
+function on_input(self, action_id, action)
+	instate.on_input(action_id, action)
+	if action_id == FORWARD then
+		if action.pressed then
+			particlefx.play("#tail")
+		elseif action.released then
+			particlefx.stop("#tail")
+		end
+	end
+end

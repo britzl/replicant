@@ -1,0 +1,267 @@
+local uuid = require "replicant.uuid"
+local noobhub = require "noobhub.noobhub"
+
+local SEND_INTERVAL = 0.05
+local BULLET_INTERVAL = 0.3
+
+--- Get game object transform and put that into a message table. This is
+-- data that we send to the server for distribution to other players.
+-- @param goid Id of the game object to get transform for
+-- @param message The message table to populate with transform data
+-- @return The updated message
+local function update_message(goid, message)
+	assert(goid, "You must provide a game object id")
+	assert(message, "You must provide a message table")
+	local pos = go.get_position(goid)
+	local euler = go.get(goid, "euler")
+	local scale = go.get_scale(goid)
+
+	message.px, message.py, message.pz = pos.x, pos.y, pos.z
+	message.ex, message.ey, message.ez = euler.x, euler.y, euler.z
+	message.sx, message.sy, message.sz = scale.x, scale.y, scale.z
+	return message
+end
+
+--- Create a game object message and populate it with transform data.
+-- This is data that we send to the server for distribution to other
+-- players
+-- @param id Unique id to associate the game object with
+-- @param goid Id of the game object to get transform for
+-- @return The created message
+local function create_gameobject_message(id, goid)
+	return update_message(goid, { id = id })
+end
+
+
+--- Update a game object with data from from the server
+-- This will animate position, rotation and scale to new values
+-- provided by the server
+-- @param message Data received from the server
+-- @param object Game object data to update
+local function update_gameobject(message, object)
+	local pos = object.pos
+	local euler = object.euler
+	local scale = object.scale
+	pos.x, pos.y, pos.z = message.px, message.py, message.pz
+	euler.x, euler.y, euler.z = message.ex, message.ey, message.ez
+	scale.x, scale.y, scale.z = message.sx, message.sy, message.sz
+	go.animate(object.goid, "position", go.PLAYBACK_ONCE_FORWARD, pos, go.EASING_LINEAR, SEND_INTERVAL)
+	go.animate(object.goid, "euler", go.PLAYBACK_ONCE_FORWARD, euler, go.EASING_LINEAR, SEND_INTERVAL)
+	go.animate(object.goid, "scale", go.PLAYBACK_ONCE_FORWARD, scale, go.EASING_LINEAR, SEND_INTERVAL)
+end
+
+
+--- Create a game object from data received from the server
+-- This will create the game object using a registered factory and
+-- keep an object with metadata about the game object
+-- @param message Data received from the server
+-- @param factory_url URL to the factory that should be used to spawn the game object
+-- @return Object with metadata about the game object
+local function create_gameobject(message, factory_url)
+	local object = {
+		id = message.id,
+		goid = factory.create(factory_url),
+		pos = vmath.vector3(message.px, message.py, message.pz),
+		euler = vmath.vector3(message.ex, message.ey, message.ez),
+		scale = vmath.vector3(message.sx, message.sy, message.sz),
+	}
+	go.set(object.goid, "euler", object.euler)
+	go.set_position(object.pos, object.goid)
+	go.set_scale(object.scale, object.goid)
+	return object
+end
+
+
+function init(self)
+	uuid.seed()
+
+	-- This is the message we send to the server
+	-- The message contains the unique user id of the client and
+	-- a list of objects that should be sent to other users on the
+	-- server
+	self.MESSAGE = {
+		uuid = uuid(),
+		objects = {},
+	}
+
+	-- registered factories
+	-- maps type to factory url
+	self.factories = {}
+
+	-- created game objects, sorted by type
+	-- maps type to lists of objects per type
+	-- each object contains information such as game object id, unique
+	-- id and transform 
+	self.local_objects = {}
+
+	self.players = {}
+
+	-- incremental counter used to assign ids to created game objects
+	self.id_counter = 0
+
+	-- lookup table between id and game object id
+	self.id_to_goid = {}
+	-- lookup table between id and game object type
+	self.id_to_type = {}
+
+	-- countdown timer until next send
+	self.next_send = 0
+
+	-- create noobhub instance
+	-- this is basically an echo server with multiple channels
+	-- anything sent to a channel will be sent to all other users
+	-- in the same channel (incl. ourselves)
+	self.hub = noobhub.new({ server = "46.4.76.236", port = 1337 })
+
+	-- subscribe to message on the channel used for this game
+	self.hub:subscribe({
+		channel = "studiox2018",
+		callback = function(message)
+			-- ignore messages from self
+			if message.uuid == self.MESSAGE.uuid then
+				return
+			end
+
+			-- store information about remote player
+			-- we track the time when we received the message
+			-- we use this to prune disconnected players
+			self.players[message.uuid] = self.players[message.uuid] or {
+				uuid = message.uuid
+			}
+			self.players[message.uuid].timestamp = socket.gettime()
+
+			-- create the table structure to track local objects from this user
+			self.local_objects[message.uuid] = self.local_objects[message.uuid] or {}
+			local local_objects = self.local_objects[message.uuid]
+
+			-- iterate the objects received from the server
+			-- they are grouped per object type
+			for type,remote_objects in pairs(message.objects) do
+				if self.factories[type] then
+					local_objects[type] = local_objects[type] or {}
+
+					-- iterate all objects of the current type
+					for _,remote_object in ipairs(remote_objects) do
+						-- create a local object from the remote object if it was the first
+						-- time we saw this object
+						local id = remote_object.id
+						if not local_objects[type][id] then
+							local_objects[type][id] = create_gameobject(remote_object, self.factories[type])
+							msg.post(".", "new_remote_gameobject", { type = type, goid = local_objects[type][id].goid })
+						end
+
+						-- update the local object with data from the server
+						-- delete it if it was removed from the remote
+						local local_object = local_objects[type][id]
+						if not remote_object.remove then
+							update_gameobject(remote_object, local_object)
+						else
+							local_objects[type][id] = nil
+							go.delete(local_object.goid)
+						end
+					end
+				end
+			end
+		end
+	})
+end
+
+function final(self)
+	self.hub:unsubscribe()
+end
+
+function update(self, dt)
+	-- read messages from server
+	self.hub:enterFrame()
+
+	-- send updates with regular intervals
+	self.next_send = self.next_send - dt
+	if self.next_send <= 0 then
+		self.next_send = SEND_INTERVAL
+
+		-- update game objects before sending to server
+		for type,objects in pairs(self.MESSAGE.objects) do
+			for _,object in ipairs(objects) do
+				-- don't update game objects that should be removed
+				if not object.remove then
+					local goid = self.id_to_goid[object.id]
+					update_message(goid, object)
+				end
+			end
+		end
+
+		-- send message to server
+		self.hub:publish({ message = self.MESSAGE })
+
+		-- remove game objects
+		-- we need to first send game objects before we remove them
+		-- this is needed so that anyone else on the channel knows that
+		-- their local game object copy should be deleted
+		for type,objects in pairs(self.MESSAGE.objects) do
+			for i=#objects,1,-1 do
+				local object = objects[i]
+				if object.remove then
+					table.remove(objects, i)
+					local goid = self.id_to_goid[object.id]
+					self.id_to_goid[object.id] = nil
+					self.id_to_type[object.id] = nil
+				end
+			end
+		end
+
+		-- go through list of connected players
+		-- if we haven't received anything from the player in a long
+		-- time we consider the player disconnected and remove
+		-- everything associated with the player
+		local now = socket.gettime()
+		for uuid,player in pairs(self.players) do
+			if now - player.timestamp > (SEND_INTERVAL * 20) then
+				self.players[uuid] = nil
+				for type,objects in pairs(self.local_objects[uuid]) do
+					for _,object in pairs(objects) do
+						go.delete(object.goid)
+					end
+				end
+				self.local_objects[uuid] = nil
+			end
+		end
+	end
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("register_factory") then
+		print("Registered factory", message.type, message.url)
+		self.factories[message.type] = message.url
+		self.MESSAGE.objects[message.type] = {}
+	elseif message_id == hash("register_gameobject") then
+		if not self.factories[message.type] then
+			print("Unknown game object type. Have you registered it?", message.type)
+			return
+		end
+		-- increment id counter and use it to assign the game object with a unique id
+		self.id_counter = self.id_counter + 1
+		local id = self.id_counter
+
+		-- create the message table that should hold information about this game object
+		table.insert(self.MESSAGE.objects[message.type], create_gameobject_message(id, message.id))
+
+		-- create lookup tables for faster access to game object id and type
+		self.id_to_goid[id] = message.id
+		self.id_to_type[id] = message.type
+	elseif message_id == hash("unregister_gameobject") then
+		-- find the game object id and flag the message table that it should be removed
+		for id,goid in pairs(self.id_to_goid) do
+			if goid == message.id then
+				local type = self.id_to_type[id]
+				for _,object in ipairs(self.MESSAGE.objects[type]) do
+					if object.id == id then
+						object.remove = true
+						return
+					end
+				end
+			end
+		end
+		print("Unable to find game object. Have you registered it?", message.goid)
+	end
+end

@@ -1,0 +1,47 @@
+local util = require "game.util"
+
+-- calculate these once for better performance
+local NEW_REMOTE_GAMEOBJECT = hash("new_remote_gameobject")
+local COLLISION_RESPONSE = hash("collision_response")
+local CREATE_IMPACT = hash("create_impact")
+
+math.randomseed(os.time())
+
+local function create_impact(id)
+	local pos = go.get_position(id)
+	local rot = go.get_rotation(id)
+	local pfx_id = factory.create("#impactfactory", pos, rot)
+	particlefx.play(msg.url(nil, pfx_id, "impact"), function(self, id, emitter, state)
+		if state == particlefx.EMITTER_STATE_POSTSPAWN then
+			go.delete(pfx_id)
+		end
+	end)
+end
+
+
+function init(self)
+	local roamer_id = factory.create("#roamerfactory", util.random_pos())
+
+	msg.post("#replicant", "register_factory", { type = "player", url = msg.url("#opponentfactory") })
+	msg.post("#replicant", "register_factory", { type = "bullet", url = msg.url("#opponentbulletfactory") })
+	msg.post("#replicant", "register_factory", { type = "roamer", url = msg.url("#remoteroamerfactory") })
+	msg.post("#replicant", "register_gameobject", { type = "player", id = "/player" })
+	msg.post("#replicant", "register_gameobject", { type = "roamer", id = roamer_id })
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == NEW_REMOTE_GAMEOBJECT then
+		if message.type == "bullet" or message.type == "player" then
+			go.set(msg.url(nil, message.goid, "sprite"), "tint", vmath.vector4(1, 0, 0, 1))
+		end
+	elseif message_id == COLLISION_RESPONSE then
+		if message.group == hash("playerbullet") then
+			msg.post("#replicant", "unregister_gameobject", { id = message.other_id })
+			go.delete(message.other_id)
+		end
+		create_impact(message.other_id)
+	elseif message_id == CREATE_IMPACT then
+		create_impact(sender)
+	end
+end
