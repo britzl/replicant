@@ -10,7 +10,7 @@ local PLAYERBULLET = hash("playerbullet")
 
 function init(self)
 	msg.post("#", MOVE)
-	self.health = 10
+	self.health = 5
 	go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, 360, go.EASING_INOUTQUAD, 10)
 end
 
@@ -25,6 +25,7 @@ function on_message(self, message_id, message, sender)
 		end)
 	elseif message_id == COLLISION_RESPONSE then
 		if message.group == OPPONENTBULLET or message.group == PLAYERBULLET then
+			-- remove player bullet
 			if message.group == PLAYERBULLET then
 				msg.post("game#replicant", "unregister_gameobject", { id = message.other_id })
 				go.delete(message.other_id)
@@ -32,7 +33,9 @@ function on_message(self, message_id, message, sender)
 			msg.post("game", "create_impact")
 
 			self.health = self.health - 1
+			-- remove it and spawn a new one
 			if self.health == 0 then
+				msg.post("game#game", "spawn_roamer")
 				msg.post("game#replicant", "unregister_gameobject", { id = go.get_id() })
 				go.delete(go.get_id())
 			end

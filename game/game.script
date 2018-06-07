@@ -4,6 +4,7 @@ local util = require "game.util"
 local NEW_REMOTE_GAMEOBJECT = hash("new_remote_gameobject")
 local COLLISION_RESPONSE = hash("collision_response")
 local CREATE_IMPACT = hash("create_impact")
+local SPAWN_ROAMER = hash("spawn_roamer")
 
 math.randomseed(os.time())
 
@@ -19,14 +20,20 @@ local function create_impact(id)
 end
 
 
-function init(self)
-	local roamer_id = factory.create("#roamerfactory", util.random_pos())
+local function spawn_roamer()
+	local roamer_id = factory.create("#roamerfactory", go.get_position("/blackhole"))
+	msg.post("#replicant", "register_gameobject", { type = "roamer", id = roamer_id })
+end
 
+
+function init(self)
 	msg.post("#replicant", "register_factory", { type = "player", url = msg.url("#opponentfactory") })
 	msg.post("#replicant", "register_factory", { type = "bullet", url = msg.url("#opponentbulletfactory") })
 	msg.post("#replicant", "register_factory", { type = "roamer", url = msg.url("#remoteroamerfactory") })
+	msg.post("#replicant", "register_factory", { type = "blackhole", url = msg.url("#remoteblackholefactory") })
 	msg.post("#replicant", "register_gameobject", { type = "player", id = "/player" })
-	msg.post("#replicant", "register_gameobject", { type = "roamer", id = roamer_id })
+	msg.post("#replicant", "register_gameobject", { type = "blackhole", id = "/blackhole" })
+	spawn_roamer()
 end
 
 
@@ -43,5 +50,7 @@ function on_message(self, message_id, message, sender)
 		create_impact(message.other_id)
 	elseif message_id == CREATE_IMPACT then
 		create_impact(sender)
+	elseif message_id == SPAWN_ROAMER then
+		spawn_roamer()
 	end
 end
