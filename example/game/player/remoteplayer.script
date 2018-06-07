@@ -1,10 +1,11 @@
 local COLLISION_RESPONSE = hash("collision_response")
-local PLAYERBULLET = hash("playerbullet")
-
+local BULLET = hash("bullet")
 
 function on_message(self, message_id, message, sender)
 	if message_id == COLLISION_RESPONSE then
-		if message.group == PLAYERBULLET then
+		if message.group == BULLET then
+			msg.post("game#replicant", "unregister_gameobject", { id = message.other_id })
+			go.delete(message.other_id)
 			msg.post("game", "create_impact")
 		end
 	end

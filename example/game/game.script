@@ -27,8 +27,8 @@ end
 
 
 function init(self)
-	msg.post("#replicant", "register_factory", { type = "player", url = msg.url("#opponentfactory") })
-	msg.post("#replicant", "register_factory", { type = "bullet", url = msg.url("#opponentbulletfactory") })
+	msg.post("#replicant", "register_factory", { type = "player", url = msg.url("#remoteplayerfactory") })
+	msg.post("#replicant", "register_factory", { type = "bullet", url = msg.url("#remotebulletfactory") })
 	msg.post("#replicant", "register_factory", { type = "roamer", url = msg.url("#remoteroamerfactory") })
 	msg.post("#replicant", "register_factory", { type = "blackhole", url = msg.url("#remoteblackholefactory") })
 	msg.post("#replicant", "register_gameobject", { type = "player", id = "/player" })
@@ -40,11 +40,13 @@ end
 
 function on_message(self, message_id, message, sender)
 	if message_id == NEW_REMOTE_GAMEOBJECT then
-		if message.type == "bullet" or message.type == "player" then
+		-- change color of remote ships to make them easier to distinguish
+		if message.type == "player" then
 			go.set(msg.url(nil, message.goid, "sprite"), "tint", vmath.vector4(1, 0, 0, 1))
 		end
 	elseif message_id == COLLISION_RESPONSE then
-		if message.group == hash("playerbullet") then
+		-- remove bullets that hit the walls
+		if message.group == hash("bullet") then
 			msg.post("#replicant", "unregister_gameobject", { id = message.other_id })
 			go.delete(message.other_id)
 		end

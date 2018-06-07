@@ -5,8 +5,8 @@ local MOVE = hash("move")
 local COLLISION_RESPONSE = hash("collision_response")
 
 -- collision groups
-local OPPONENTBULLET = hash("opponentbullet")
-local PLAYERBULLET = hash("playerbullet")
+local REMOTEBULLET = hash("remotebullet")
+local BULLET = hash("bullet")
 
 function init(self)
 	msg.post("#", MOVE)
@@ -24,9 +24,9 @@ function on_message(self, message_id, message, sender)
 			msg.post("#", MOVE)
 		end)
 	elseif message_id == COLLISION_RESPONSE then
-		if message.group == OPPONENTBULLET or message.group == PLAYERBULLET then
-			-- remove player bullet
-			if message.group == PLAYERBULLET then
+		if message.group == REMOTEBULLET or message.group == BULLET then
+			-- remove local bullets
+			if message.group == BULLET then
 				msg.post("game#replicant", "unregister_gameobject", { id = message.other_id })
 				go.delete(message.other_id)
 			end

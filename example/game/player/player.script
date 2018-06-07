@@ -14,7 +14,7 @@ local COLLISION_RESPONSE = hash("collision_response")
 
 -- collision groups
 local WALL = hash("wall")
-local OPPONENTBULLET = hash("opponentbullet")
+local REMOTEBULLET = hash("remotebullet")
 
 -- basis of rotation
 local V3_RIGHT = vmath.vector3(1, 0, 0)
@@ -90,8 +90,7 @@ function on_message(self, message_id, message, sender)
 			go.set_position(go.get_position() + message.normal * message.distance)
 		end
 	elseif message_id == COLLISION_RESPONSE then
-		if message.group == OPPONENTBULLET then
-			print("hit")
+		if message.group == REMOTEBULLET then
 			msg.post("game", "create_impact")
 		end
 	end
