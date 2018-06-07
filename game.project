@@ -22,7 +22,7 @@ debug = 0
 shared_state = 1
 
 [library]
-include_dirs = 
+include_dirs = replicant
 
 [android]
 package = com.britzl.defold.studioplay
