@@ -14,7 +14,7 @@ emitters {
     z: 0.70710677
     w: 0.70710677
   }
-  tile_source: "/assets/game.atlas"
+  tile_source: "/example/assets/game.atlas"
   animation: "shrapnel"
   material: "/builtins/materials/particlefx.material"
   blend_mode: BLEND_MODE_ADD_ALPHA

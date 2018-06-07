@@ -1,4 +1,4 @@
-local util = require "game.util"
+local util = require "example.game.util"
 
 -- calculate these once for better performance
 local NEW_REMOTE_GAMEOBJECT = hash("new_remote_gameobject")
@@ -33,6 +33,7 @@ function init(self)
 	msg.post("#replicant", "register_factory", { type = "blackhole", url = msg.url("#remoteblackholefactory") })
 	msg.post("#replicant", "register_gameobject", { type = "player", id = "/player" })
 	msg.post("#replicant", "register_gameobject", { type = "blackhole", id = "/blackhole" })
+	spawn_roamer()
 	spawn_roamer()
 end
 

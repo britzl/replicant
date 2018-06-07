@@ -1,5 +1,5 @@
 local uuid = require "replicant.uuid"
-local noobhub = require "noobhub.noobhub"
+local noobhub = require "replicant.noobhub.noobhub"
 
 local SEND_INTERVAL = 0.05
 local BULLET_INTERVAL = 0.3

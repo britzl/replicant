@@ -1,11 +1,11 @@
 [project]
-title = StudioX-Multiplayer
+title = Replicant
 version = 0.1
 dependencies = https://github.com/britzl/defold-input/archive/1.3.0.zip
 custom_resources = 
 
 [bootstrap]
-main_collection = /game/game.collectionc
+main_collection = /example/game/game.collectionc
 
 [input]
 game_binding = /input/game.input_bindingc

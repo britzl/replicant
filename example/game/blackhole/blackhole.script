@@ -1,4 +1,4 @@
-local util = require "game.util"
+local util = require "example.game.util"
 
 local MOVE = hash("move")
 

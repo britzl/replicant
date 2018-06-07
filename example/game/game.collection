@@ -1,7 +1,7 @@
 name: "default"
 instances {
   id: "player"
-  prototype: "/game/player.go"
+  prototype: "/example/game/player/player.go"
   position {
     x: 0.0
     y: 0.0
@@ -21,7 +21,7 @@ instances {
 }
 instances {
   id: "blackhole"
-  prototype: "/game/blackhole.go"
+  prototype: "/example/game/blackhole/blackhole.go"
   position {
     x: 568.0
     y: 320.0
@@ -44,7 +44,7 @@ embedded_instances {
   id: "game"
   data: "components {\n"
   "  id: \"game\"\n"
-  "  component: \"/game/game.script\"\n"
+  "  component: \"/example/game/game.script\"\n"
   "  position {\n"
   "    x: 0.0\n"
   "    y: 0.0\n"
@@ -75,7 +75,7 @@ embedded_instances {
   "embedded_components {\n"
   "  id: \"opponentbulletfactory\"\n"
   "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/game/opponentbullet.go\\\"\\n"
+  "  data: \"prototype: \\\"/example/game/bullet/opponentbullet.go\\\"\\n"
   "load_dynamically: false\\n"
   "\"\n"
   "  position {\n"
@@ -93,7 +93,7 @@ embedded_instances {
   "embedded_components {\n"
   "  id: \"opponentfactory\"\n"
   "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/game/opponent.go\\\"\\n"
+  "  data: \"prototype: \\\"/example/game/player/opponent.go\\\"\\n"
   "load_dynamically: false\\n"
   "\"\n"
   "  position {\n"
@@ -218,7 +218,7 @@ embedded_instances {
   "embedded_components {\n"
   "  id: \"impactfactory\"\n"
   "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/game/impact.go\\\"\\n"
+  "  data: \"prototype: \\\"/example/game/impact.go\\\"\\n"
   "load_dynamically: false\\n"
   "\"\n"
   "  position {\n"
@@ -236,7 +236,7 @@ embedded_instances {
   "embedded_components {\n"
   "  id: \"roamerfactory\"\n"
   "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/game/roamer.go\\\"\\n"
+  "  data: \"prototype: \\\"/example/game/roamer/roamer.go\\\"\\n"
   "load_dynamically: false\\n"
   "\"\n"
   "  position {\n"
@@ -254,7 +254,7 @@ embedded_instances {
   "embedded_components {\n"
   "  id: \"remoteroamerfactory\"\n"
   "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/game/remoteroamer.go\\\"\\n"
+  "  data: \"prototype: \\\"/example/game/roamer/remoteroamer.go\\\"\\n"
   "load_dynamically: false\\n"
   "\"\n"
   "  position {\n"
@@ -272,7 +272,7 @@ embedded_instances {
   "embedded_components {\n"
   "  id: \"remoteblackholefactory\"\n"
   "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/game/remoteblackhole.go\\\"\\n"
+  "  data: \"prototype: \\\"/example/game/blackhole/remoteblackhole.go\\\"\\n"
   "load_dynamically: false\\n"
   "\"\n"
   "  position {\n"

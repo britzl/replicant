@@ -1,6 +1,6 @@
 components {
   id: "impact"
-  component: "/assets/pfx/impact.particlefx"
+  component: "/example/assets/pfx/impact.particlefx"
   position {
     x: 0.0
     y: 0.0

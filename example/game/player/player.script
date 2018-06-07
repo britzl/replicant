@@ -1,5 +1,5 @@
 local instate = require "in.state"
-local util = require "game.util"
+local util = require "example.game.util"
 
 -- actions
 local TURNLEFT = hash("turnleft")

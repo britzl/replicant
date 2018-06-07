@@ -10,7 +10,7 @@
 -- https://github.com/Overtorment/NoobHub
 --------------------
 
-local rxijson = require "noobhub.json"
+local rxijson = require "replicant.noobhub.json"
 json.encode = rxijson.encode
 
 local noobhub = {

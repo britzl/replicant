@@ -1,6 +1,6 @@
 components {
   id: "player"
-  component: "/game/player.script"
+  component: "/example/game/player/player.script"
   position {
     x: 0.0
     y: 0.0
@@ -15,7 +15,7 @@ components {
 }
 components {
   id: "tail"
-  component: "/assets/pfx/tail.particlefx"
+  component: "/example/assets/pfx/tail.particlefx"
   position {
     x: 0.0
     y: 0.0
@@ -31,7 +31,7 @@ components {
 embedded_components {
   id: "bulletfactory"
   type: "factory"
-  data: "prototype: \"/game/bullet.go\"\n"
+  data: "prototype: \"/example/game/bullet/bullet.go\"\n"
   "load_dynamically: false\n"
   ""
   position {
@@ -96,7 +96,7 @@ embedded_components {
 embedded_components {
   id: "sprite"
   type: "sprite"
-  data: "tile_set: \"/assets/game.atlas\"\n"
+  data: "tile_set: \"/example/assets/game.atlas\"\n"
   "default_animation: \"player\"\n"
   "material: \"/builtins/materials/sprite.material\"\n"
   "blend_mode: BLEND_MODE_ALPHA\n"
