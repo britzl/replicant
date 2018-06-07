@@ -1,18 +1,41 @@
 local util = require "game.util"
 
+-- messages
+local MOVE = hash("move")
+local COLLISION_RESPONSE = hash("collision_response")
+
+-- collision groups
+local OPPONENTBULLET = hash("opponentbullet")
+local PLAYERBULLET = hash("playerbullet")
+
 function init(self)
-	msg.post("#", "move")
+	msg.post("#", MOVE)
+	self.health = 10
 	go.animate(".", "euler.z", go.PLAYBACK_LOOP_FORWARD, 360, go.EASING_INOUTQUAD, 10)
 end
 
 function on_message(self, message_id, message, sender)
-	if message_id == hash("move") then
+	if message_id == MOVE then
 		local pos = go.get_position()
 		local new = util.random_pos()
 		local distance = vmath.length(pos - new)
 		local duration = distance / 100
 		go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD, new, go.EASING_INOUTQUAD, duration, 0, function()
-			msg.post("#", "move")
+			msg.post("#", MOVE)
 		end)
+	elseif message_id == COLLISION_RESPONSE then
+		if message.group == OPPONENTBULLET or message.group == PLAYERBULLET then
+			if message.group == PLAYERBULLET then
+				msg.post("game#replicant", "unregister_gameobject", { id = message.other_id })
+				go.delete(message.other_id)
+			end
+			msg.post("game", "create_impact")
+
+			self.health = self.health - 1
+			if self.health == 0 then
+				msg.post("game#replicant", "unregister_gameobject", { id = go.get_id() })
+				go.delete(go.get_id())
+			end
+		end
 	end
 end
