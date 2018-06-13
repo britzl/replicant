@@ -110,9 +110,10 @@ function init(self)
 	-- create noobhub instance
 	-- this is basically an echo server with multiple channels
 	-- anything sent to a channel will be sent to all other users
-	-- in the same channel (incl. ourselves)
-	self.hub = noobhub.new({ server = "46.4.76.236", port = 1337 })
-
+	-- in the same channel (incl. ourselves)	
+	--self.hub = noobhub.new({ server = "46.4.76.236", port = 1337 })
+	self.hub = noobhub.new({ server = "noobhub.defold.com", port = 1337 })
+	
 	-- subscribe to message on the channel used for this game
 	self.hub:subscribe({
 		channel = "studiox2018",
